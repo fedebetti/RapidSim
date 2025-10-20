@@ -21,9 +21,9 @@ To build do the following, where "<install location>" should be the full path, u
 ```shell
 $ # Set environment for gcc, it defines LD_LIBRARY_PATH and FC, CC, CXX. RapidSim also works with clang.
 $ # On lxplus do this:
-$ source /cvmfs/lhcb.cern.ch/lib/lcg/releases/LCG_87/gcc/4.9.3/x86_64-slc6/setup.sh
+$ source /cvmfs/lhcb.cern.ch/lib/lcg/releases/LCG_103/gcc/12.1.0/x86_64-centos7/setup.sh
 $ # Set ROOT environment 
-$ source /cvmfs/lhcb.cern.ch/lib/lcg/releases/LCG_87/ROOT/6.08.02/x86_64-slc6-gcc49-opt/bin/thisroot.sh
+$ source /cvmfs/lhcb.cern.ch/lib/lcg/releases/LCG_103/ROOT/6.28.00/x86_64-centos7-gcc12-opt/bin/thisroot.sh
 $ mkdir build
 $ cd build 
 $ cmake ../ -DCMAKE_INSTALL_PREFIX=<install location>
