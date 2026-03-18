@@ -141,7 +141,10 @@ bool RapidExternalEvtGen::setupGenerator() {
   decPath += getenv( "RAPIDSIM_CONFIG" );
   if ( decPath != "" ) {
     decPath += "/config/evtgen/DECAY.DEC";
-    if ( !gSystem->AccessPathName( decPath ) ) foundDec = true;
+    if ( !gSystem->AccessPathName( decPath ) )
+      foundDec = true;
+    else
+      decPath = "";
   }
 
   // We want to initialise EvtGen before we define our DEC file so we can use EvtPDL
