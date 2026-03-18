@@ -132,7 +132,7 @@ RapidDecay* RapidConfig::getDecay() {
 		if(!loadParentKinematics()) {
 			return 0;
 		}
-		decay_->setParentKinematics(ptHisto_,etaHisto_);
+		decay_->setParentKinematics(ptHisto_,etaHisto_,phiHisto_,ptetaHisto_);
 
 		if(!loadPVntracks()) {
 			return 0;
@@ -613,6 +613,7 @@ RapidParam* RapidConfig::loadParam(TString paramStr) {
 	paramStr.Tokenize(buffer,from," ");
 	type = RapidParam::typeFromString(buffer);
 
+	
 	while(paramStr.Tokenize(buffer,from," ")) {
 		if(buffer.IsDec()) {
 			unsigned int index = buffer.Atoi();
@@ -1086,6 +1087,8 @@ bool RapidConfig::loadParentKinematics() {
 		fileName += ".root";
 		file = TFile::Open(fileName);
 
+		std::cout << "FILENAME: " << fileName << "\n";
+		
 		if(file) {
 			std::cout << "INFO in RapidConfig::loadParentKinematics : found kinematics LHC" << motherFlavour_ << ppEnergy_ << " in RAPIDSIM_CONFIG." << std::endl
 				  << "                                            this version will be used." << std::endl;
@@ -1114,7 +1117,11 @@ bool RapidConfig::loadParentKinematics() {
 
 	TH1* ptHisto = dynamic_cast<TH1*>(file->Get("pT"));
 	TH1* etaHisto = dynamic_cast<TH1*>(file->Get("eta"));
+        TH1* phiHisto = dynamic_cast<TH1*>(file->Get("phi"));
+        TH2* ptetaHisto = dynamic_cast<TH2*>(file->Get("pteta"));
 
+	std::cout << phiHisto << std::endl;
+	
 	if(!ptHisto || !check1D(ptHisto)) {
 		std::cout << "ERROR in RapidConfig::loadParentKinematics : pT histogram is neither TH1F nor TH1D." << std::endl;
 		return false;
@@ -1124,7 +1131,17 @@ bool RapidConfig::loadParentKinematics() {
 		std::cout << "ERROR in RapidConfig::loadParentKinematics : eta histogram is neither TH1F nor TH1D." << std::endl;
 		return false;
 	}
-
+	/*
+	if(!phiHisto || !check1D(phiHisto)) {
+		std::cout << "ERROR in RapidConfig::loadParentKinematics : phi histogram is neither TH1F nor TH1D." << std::endl;
+		return false;
+	}
+	if(!ptetaHisto || !check2D(ptetaHisto)) {
+	  std::cout << "ERROR in RapidConfig::loadParentKinematics : pt-eta histogram is neither TH2F nor TH2D." << std::endl;
+	  return false;
+	}
+        */
+	
 	if( ptMin_==-999. || ptMax_==-999. ) {
 		std::cout << "INFO in RapidConfig::loadParentKinematics : pt range not defined by user." << std::endl;
 		std::cout << "                                            Will take default for detector geometry." << std::endl;
@@ -1140,7 +1157,10 @@ bool RapidConfig::loadParentKinematics() {
 
 	ptHisto_ = reduceHistogram(ptHisto,ptMin_,ptMax_);
 	etaHisto_ = reduceHistogram(etaHisto,etaMin_,etaMax_);
-
+	if(phiHisto) {
+	  phiHisto_ = reduceHistogram(phiHisto,0,2*TMath::Pi());
+	}
+	ptetaHisto_ = ptetaHisto;
 	return true;
 }
 
@@ -1169,6 +1189,7 @@ void RapidConfig::setupDefaultParams() {
 						pidHists = pidHists_[type];
 					}
 					RapidParam* param = new RapidParam("", type, part, false, pidHists);
+		
 					if ( param->canBeSmeared() ) {
 						param->name();
 						paramsStable_.push_back(param);
@@ -1196,6 +1217,7 @@ void RapidConfig::setupDefaultParams() {
 				RapidParticle* part = parts_[i];
 				if(part->nDaughters() > 0) {
 					RapidParam* param = new RapidParam("", type, part, false);
+					std::cout << "DIOOOOOOOOOOO " << param->name() <<  " " << i << " " << param->eval() << " " << param->typeName() << " " << type << std::endl;
 					if ( param->canBeSmeared() ) {
 						param->name();
 						paramsDecaying_.push_back(param);

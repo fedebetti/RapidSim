@@ -30,7 +30,8 @@ class RapidConfig {
 			  acceptanceType_(RapidAcceptance::ANY),
 			  detectorGeometry_(RapidAcceptance::FOURPI),
 			  ppEnergy_(8.), motherFlavour_("b"),
-			  ptHisto_(0), etaHisto_(0), pvHisto_(0), ptMin_(-999.), ptMax_(-999.), etaMin_(-999.), etaMax_(-999.),
+			  ptHisto_(0), etaHisto_(0), phiHisto_(0), ptetaHisto_(0),
+			  pvHisto_(0), ptMin_(-999.), ptMax_(-999.), etaMin_(-999.), etaMax_(-999.),
 			  maxgen_(1000), decay_(0), acceptance_(0), writer_(0), external_(0), usePhotos_(false)
 		{}
 
@@ -121,7 +122,9 @@ class RapidConfig {
 		//parent kinematic distributions
 		TH1* ptHisto_;
 		TH1* etaHisto_;
-
+                TH1* phiHisto_;
+                TH2* ptetaHisto_;
+  
 		// PVNTRACKS
 		TH1* pvHisto_;
 

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 
+#include "TFile.h"
 #include "TMath.h"
 #include "TRandom.h"
 
@@ -15,10 +16,12 @@
 #include "RapidBeamData.h"
 #include "RapidVertex.h"
 
-void RapidDecay::setParentKinematics(TH1* ptHisto, TH1* etaHisto) {
+void RapidDecay::setParentKinematics(TH1* ptHisto, TH1* etaHisto, TH1* phiHisto, TH2* ptetaHisto) {
 	std::cout << "INFO in RapidDecay::setParentKinematics : setting kinematics of the parent." << std::endl;
 	ptHisto_=ptHisto;
 	etaHisto_=etaHisto;
+	phiHisto_=phiHisto;
+	ptetaHisto_=ptetaHisto;
 }
 
 void RapidDecay::setPVntracks(TH1* pvHisto) {
@@ -34,6 +37,9 @@ void RapidDecay::setAcceptRejectHist(TH1* histo, RapidParam* param) {
 	//correct the histogram to account for the the phasespace distribution
 	TH1* denom = generateAccRejDenominator1D();
 	accRejHisto_->Divide(denom);
+	TFile * fout = new TFile("fout_divided.root","RECREATE");
+	accRejHisto_->Write();
+	fout->Close();
 	delete denom;
 }
 
@@ -179,6 +185,7 @@ bool RapidDecay::runAcceptReject1D() {
 	if(!accRejHisto_->IsBinOverflow(bin) && !accRejHisto_->IsBinUnderflow(bin)) {
 		score = accRejHisto_->Interpolate(val);
 	}
+	//std::cout << "RapidDecay::runAcceptReject1D: " << val << " " << bin << " " << val << " " << score << "\n";
 	double max = accRejHisto_->GetMaximum();
 	if(score > gRandom->Uniform(max)) return true;
 	return false;
@@ -202,13 +209,24 @@ TH1* RapidDecay::generateAccRejDenominator1D() {
 	TH1* denomHisto = dynamic_cast<TH1*>(accRejHisto_->Clone("denom"));
 	denomHisto->Reset();
 
+	std::cout << "MADONNE " << accRejHisto_->GetName() << "\n";
+
+	std::cout << accRejParameterX_->name() << " " << accRejParameterX_->truth() << "\n";
+	
 	std::cout << "INFO in RapidDecay::generateAccRejDenominator : generating 1M decays to remove the \"phasespace\" distribution..." << std::endl;
 	for(int i=0; i<1000000; ++i) {
 		floatMasses();
 		genParent();
 		if(!genDecay(true)) continue;
+		accRejParameterX_ = new RapidParam(accRejParameterX_->name(),RapidParam::ParamType::ETA,parts_[0],true);
+		std::cout << "CIAO " << accRejParameterX_->eval() << " " << parts_[0]->getP().Eta() << "\n";
 		denomHisto->Fill(accRejParameterX_->eval());
+
 	}
+		
+	TFile * fout = new TFile("fout_denom_hist.root","RECREATE");
+	denomHisto->Write();
+	fout->Close();
 	return denomHisto;
 }
 
@@ -227,10 +245,17 @@ TH2* RapidDecay::generateAccRejDenominator2D() {
 }
 
 void RapidDecay::genParent() {
-	double pt(0), eta(0), phi(gRandom->Uniform(0,2*TMath::Pi()));
+  //double pt(0), eta(0), phi(gRandom->Uniform(0,2*TMath::Pi()));
+        double pt(0), eta(0), phi(0);
 	unsigned int nPVtracks(5);
-	if(ptHisto_)   pt = ptHisto_->GetRandom();
-	if(etaHisto_) eta = etaHisto_->GetRandom();
+	if(ptetaHisto_){ptetaHisto_->GetRandom2(pt,eta);} //does the 2D first, if exists
+	else {
+	  if(ptHisto_)   {pt = ptHisto_->GetRandom();}
+	  if(etaHisto_) { eta = etaHisto_->GetRandom();}
+	}
+        if(phiHisto_) { phi = phiHisto_->GetRandom();}
+	else {phi = gRandom->Uniform(0,2*TMath::Pi());}
+	
 	parts_[0]->setPtEtaPhi(pt,eta,phi);
 	if(pvHisto_) nPVtracks = pvHisto_->GetRandom();
 	parts_[0]->getOriginVertex()->setNtracks(nPVtracks);
@@ -248,6 +273,7 @@ void RapidDecay::genParent() {
 		vtx.setNtracks(nPVtracks);
 		pileuppvs_.push_back(vtx);
 	}
+	
 }
 
 bool RapidDecay::genDecay(bool acceptAny) {
@@ -322,9 +348,9 @@ bool RapidDecay::genDecayAccRej() {
 	int ntry(0);
 
 	do {
-		if(!genDecay(true)) return false;
-		passAccRej = runAcceptReject();
-		++ntry;
+	  if(!genDecay(true)) return false;
+	  passAccRej = runAcceptReject();
+	  ++ntry;
 
 	} while(!passAccRej && ntry<maxgen_);
 
